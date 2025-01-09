@@ -2,7 +2,7 @@
 
 Whether you are adding a loss function, improving test coverage, or writing an
 RFC for a major design change, this portion of the contributor guide will help
-you get started. Thank you for work and interest in improving TensorFlow.
+you get started. Thank you for your work and interest in improving TensorFlow.
 
 ## Before you get started
 
@@ -34,7 +34,7 @@ workflow, and for the core devs to become acquainted with the contributor.
 
 If you are interested in recruiting a team to help tackle a large-scale problem
 or a new feature, please email the
-[developers@ group](https://groups.google.com/a/tensorflow.org/forum/#!forum/developers)
+[developers@ group](https://groups.google.com/a/tensorflow.org/g/developers)
 and review our current list of RFCs.
 
 ## Code review
@@ -162,7 +162,7 @@ up to date.
 Additional `git` and GitHub resources:
 
 *   [Git documentation](https://git-scm.com/documentation)
-*   [Git development workflow](https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html)
+*   [Git development workflow](https://docs.scipy.org/doc/numpy/dev/development_workflow.html)
 *   [Resolving merge conflicts](https://help.github.com/articles/resolving-a-merge-conflict-using-the-command-line/).
 
 

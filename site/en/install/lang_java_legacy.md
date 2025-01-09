@@ -1,7 +1,7 @@
 # Install TensorFlow for Java
 
 Warning: TensorFlow for Java is deprecated and will be removed in a future
-version of TensorFlow once <a href=/java>the replacement</a> is stable.
+version of TensorFlow once [the replacement](https://www.tensorflow.org/jvm) is stable.
 
 TensorFlow provides a
 [Java API](https://www.tensorflow.org/api_docs/java/reference/org/tensorflow/package-summary)—
@@ -27,7 +27,7 @@ To use TensorFlow on Android see [TensorFlow Lite](https://tensorflow.org/lite)
 
 ## TensorFlow with Apache Maven
 
-To use TensorFlow with [Apache Maven](https://maven.apache.org){:.external},
+To use TensorFlow with [Apache Maven](https://maven.apache.org),
 add the dependency to the project's `pom.xml` file:
 
 ```xml
@@ -40,7 +40,7 @@ add the dependency to the project's `pom.xml` file:
 
 ### GPU support
 
-If your system has [GPU support](./gpu.md), add the following TensorFlow
+If your system has [GPU support](./pip.md), add the following TensorFlow
 dependencies to the project's `pom.xml` file:
 
 ```xml
@@ -167,11 +167,11 @@ system and processor support:
 Note: On Windows, the native library (`tensorflow_jni.dll`) requires
 `msvcp140.dll` at runtime. See the
 [Windows build from source](./source_windows.md) guide to install the
-[Visual C++ 2019 Redistributable](https://visualstudio.microsoft.com/vs/){:.external}.
+[Visual C++ 2019 Redistributable](https://visualstudio.microsoft.com/vs/).
 
 ### Compile
 
-Using the `HelloTensorFlow.java` file from the [previous example](#example),
+Using the `HelloTensorFlow.java` file from the [previous example](#example-program),
 compile a program that uses TensorFlow. Make sure the `libtensorflow.jar` is
 accessible to your `classpath`:
 
@@ -203,5 +203,5 @@ Success: TensorFlow for Java is configured.
 ## Build from source
 
 TensorFlow is open source. Read
-[the instructions](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/java/README.md){:.external}
+[the instructions](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/java/README.md)
 to build TensorFlow's Java and native libraries from source code.

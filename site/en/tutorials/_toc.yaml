@@ -35,6 +35,9 @@ toc:
   section:
   - title: "Images"
     path: /tutorials/load_data/images
+  - title: "Video"
+    path: /tutorials/load_data/video
+    status: new
   - title: "CSV"
     path: /tutorials/load_data/csv
   - title: "NumPy"
@@ -74,6 +77,12 @@ toc:
   section:
   - title: "Distributed training with Keras"
     path: /tutorials/distribute/keras
+  - title: "Distributed training with DTensors"
+    path: /tutorials/distribute/dtensor_ml_tutorial
+    status: experimental
+  - title: "Using DTensors with Keras"
+    path: /tutorials/distribute/dtensor_keras_tutorial
+    status: experimental
   - title: "Custom training loops"
     path: /tutorials/distribute/custom_training
   - title: "Multi-worker training with Keras"
@@ -88,9 +97,14 @@ toc:
   - title: "Distributed input"
     path: /tutorials/distribute/input
 
-- title: "Images"
+- title: "Vision"
   style: accordion
   section:
+  - title: "Computer vision"
+    path: /tutorials/images
+  - title: "KerasCV"
+    path: https://keras.io/keras_cv/
+    status: external
   - title: "Convolutional Neural Network"
     path: /tutorials/images/cnn
   - title: "Image classification"
@@ -104,31 +118,27 @@ toc:
   - title: "Image segmentation"
     path: /tutorials/images/segmentation
   - title: "Object detection with TF Hub"
-    path: https://github.com/tensorflow/hub/blob/master/examples/colab/tf2_object_detection.ipynb
+    path: /hub/tutorials/tf2_object_detection
     status: external
+  - title: "Video classification"
+    status: new
+    path: /tutorials/video/video_classification
+  - title: "Transfer learning with MoViNet"
+    status: new
+    path: /tutorials/video/transfer_learning_with_movinet
 
 - title: "Text"
   style: accordion
   section:
-  - title: "Word embeddings"
-    path: /text/guide/word_embeddings
+  - title: "Text and natural language processing"
+    path: /tutorials/text/index
+  - title: "Get started with KerasNLP"
+    path: https://keras.io/guides/keras_nlp/getting_started/
     status: external
-  - title: "Word2Vec"
-    path: /tutorials/text/word2vec
-  - title: "Text classification with an RNN"
-    path: /text/tutorials/text_classification_rnn
+  - title: "Text and NLP guide"
+    path: /text
     status: external
-  - title: "Classify Text with BERT"
-    path: /text/tutorials/classify_text_with_bert
-    status: external
-  - title: "Solve GLUE tasks using BERT on TPU"
-    path: /text/tutorials/bert_glue
-    status: external
-  - title: "Neural machine translation with attention"
-    path: /text/tutorials/nmt_with_attention
-    status: external
-  - title: "Image captioning"
-    path: /tutorials/text/image_captioning
+
 - title: "Audio"
   style: accordion
   section:
@@ -136,10 +146,8 @@ toc:
     path: /tutorials/audio/simple_audio
   - title: "Transfer learning for audio recognition"
     path: /tutorials/audio/transfer_learning_audio
-    status: new
   - title: "Generate music with an RNN"
     path: /tutorials/audio/music_generation
-    status: new
 
 - title: "Structured data"
   style: accordion
@@ -160,6 +168,9 @@ toc:
 - title: "Generative"
   style: accordion
   section:
+  - title: "Stable Diffusion"
+    status: new
+    path: /tutorials/generative/generate_images_with_stable_diffusion
   - title: "Neural style transfer"
     path: /tutorials/generative/style_transfer
   - title: "DeepDream"
@@ -176,6 +187,17 @@ toc:
     path: /tutorials/generative/autoencoder
   - title: "Variational Autoencoder"
     path: /tutorials/generative/cvae
+  - title: "Lossy data compression"
+    path: /tutorials/generative/data_compression
+
+- title: "Model optimization"
+  style: accordion
+  section:
+  - title: "Scalable model compression with EPR"
+    path: /tutorials/optimization/compression
+  - title: "TensorFlow model optimization"
+    status: external
+    path: /model_optimization
 
 - title: "Model Understanding"
   style: accordion
@@ -187,6 +209,7 @@ toc:
   - title: "Probabilistic regression"
     path: /probability/examples/Probabilistic_Layers_Regression
     status: external
+
 - title: "Reinforcement learning"
   style: accordion
   section:
@@ -198,6 +221,7 @@ toc:
 
 - title: "tf.Estimator"
   style: accordion
+  status: deprecated
   section:
   - title: "Premade estimator"
     path: /tutorials/estimator/premade

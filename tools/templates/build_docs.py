@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +25,7 @@ import os
 from absl import app
 from absl import flags
 
-import tensorflow_docs
+import tensorflow_docs.api_generator
 from tensorflow_docs.api_generator import generate_lib
 from tensorflow_docs.api_generator import public_api
 
@@ -56,15 +55,22 @@ def gen_api_docs():
   # The below `del`'s are to avoid the api_gen_test to not document these.
   # Please remove these lines from your build_docs.py files when you create
   # them.
-  del tensorflow_docs.google
-  del tensorflow_docs.api_generator.report.schema
+  try:
+    del tensorflow_docs.google
+  except AttributeError:
+    pass
+
+  try:
+    del tensorflow_docs.api_generator.report.schema
+  except AttributeError:
+    pass
 
   doc_generator = generate_lib.DocGenerator(
       root_title=PROJECT_FULL_NAME,
-      # Replace `tensorflow_docs` with your module, here.
-      py_modules=[(PROJECT_SHORT_NAME, tensorflow_docs)],
-      # Replace `tensorflow_docs` with your module, here.
-      base_dir=os.path.dirname(tensorflow_docs.__file__),
+      # Replace `tensorflow_docs.api_generator` with your module, here.
+      py_modules=[(PROJECT_SHORT_NAME, tensorflow_docs.api_generator)],
+      # Replace `tensorflow_docs.api_generator` with your module, here.
+      base_dir=os.path.dirname(tensorflow_docs.api_generator.__file__),
       code_url_prefix=_URL_PREFIX.value,
       search_hints=_SEARCH_HINTS.value,
       site_path=_SITE_PATH.value,

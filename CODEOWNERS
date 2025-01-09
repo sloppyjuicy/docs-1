@@ -2,10 +2,13 @@
 # Last matching pattern takes precedence.
 
 # Default owners for everything in repo.
-*  @MarkDaoust @8bitmp3
+*  @tensorflow/docs-team
 
-# Docs
-/site/en/guide/keras/ @fchollet @MarkDaoust @8bitmp3
+# Install
+/site/en/install/ @haifeng-jin @MarkDaoust @8bitmp3
 
 # Community
 /site/en/community/ @ewilderj @theadactyl @joanafilipa
+
+# Hub
+/site/en/hub @gustheman

@@ -1,9 +1,9 @@
 # Build from source on Windows
 
-Build a TensorFlow *pip* package from source and install it on Windows.
+Build a TensorFlow *pip* package from the source and install it on Windows.
 
 Note: We already provide well-tested, pre-built
-[TensorFlow packages](./pip.html) for Windows systems.
+[TensorFlow packages](./pip.md) for Windows systems.
 
 ## Setup for Windows
 
@@ -13,13 +13,14 @@ environment.
 ### Install Python and the TensorFlow package dependencies
 
 Install a
-[Python 3.7+ 64-bit release for Windows](https://www.python.org/downloads/windows/){:.external}.
+[Python 3.9+ 64-bit release for Windows](https://www.python.org/downloads/windows/).
 Select *pip* as an optional feature and add it to your `%PATH%` environmental
 variable.
 
 Install the TensorFlow *pip* package dependencies:
 
 <pre class="devsite-click-to-copy">
+<code class="devsite-terminal tfo-terminal-windows">pip3 install -U pip</code>
 <code class="devsite-terminal tfo-terminal-windows">pip3 install -U six numpy wheel packaging</code>
 <code class="devsite-terminal tfo-terminal-windows">pip3 install -U keras_preprocessing --no-deps</code>
 </pre>
@@ -41,38 +42,53 @@ Add the location of the Bazel executable to your `%PATH%` environment variable.
 
 ### Install MSYS2
 
-[Install MSYS2](https://www.msys2.org/){:.external} for the bin tools needed to
+[Install MSYS2](https://www.msys2.org/) for the bin tools needed to
 build TensorFlow. If MSYS2 is installed to `C:\msys64`, add
 `C:\msys64\usr\bin` to your `%PATH%` environment variable. Then, using `cmd.exe`,
 run:
 
 <pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
+pacman -Syu (requires a console restart)
 pacman -S git patch unzip
+pacman -S git patch unzip rsync
 </pre>
 
-### Install Visual C++ Build Tools 2019
+Note: Clang will be the preferred compiler to build TensorFlow CPU wheels on the Windows Platform starting with TF 2.16.1 The currently supported version is LLVM/clang 17.0.6.
 
-Install the *Visual C++ build tools 2019*. This comes with *Visual Studio 2019*
+Note: To build with Clang on Windows, it is required to install both LLVM and Visual C++ Build tools as although Windows uses clang-cl.exe as the compiler, Visual C++ Build tools are needed to link to Visual C++ libraries
+
+### Install Visual C++ Build Tools 2022
+
+Install the *Visual C++ build tools 2022*. This comes with *Visual Studio Community 2022*
 but can be installed separately:
 
 1.  Go to the
-    [Visual Studio downloads](https://visualstudio.microsoft.com/downloads/){:.external},
-2.  Select *Redistributables and Build Tools*,
+    [Visual Studio downloads](https://visualstudio.microsoft.com/downloads/),
+2.  Select *Tools for Visual Studio or Other Tools, Framework and Redistributables*,
 3.  Download and install:
-    -   *Microsoft Visual C++ 2019 Redistributable*
-    -   *Microsoft Build Tools 2019*
+    -   *Build Tools for Visual Studio 2022*
+    -   *Microsoft Visual C++ Redistributables for Visual Studio 2022*
 
-Note: TensorFlow is tested against the *Visual Studio 2019*.
+Note: TensorFlow is tested against the *Visual Studio Community 2022*.
+
+### Install LLVM
+
+1.  Go to the
+    [LLVM downloads](https://github.com/llvm/llvm-project/releases/),
+2.  Download and install Windows-compatible LLVM in C:/Program Files/LLVM e.g., LLVM-17.0.6-win64.exe
+
 
 ### Install GPU support (optional)
 
 See the Windows [GPU support](./gpu.md) guide to install the drivers and
 additional software required to run TensorFlow on a GPU.
 
+Note: GPU support on native-Windows is only available for 2.10 or earlier versions, starting in TF 2.11, CUDA build is not supported for Windows. For using TensorFlow GPU on Windows, you will need to build/install TensorFlow in WSL2 or use tensorflow-cpu with TensorFlow-DirectML-Plugin
+
 ### Download the TensorFlow source code
 
-Use [Git](https://git-scm.com/){:.external} to clone the
-[TensorFlow repository](https://github.com/tensorflow/tensorflow){:.external}
+Use [Git](https://git-scm.com/) to clone the
+[TensorFlow repository](https://github.com/tensorflow/tensorflow)
 (`git` is installed with MSYS2):
 
 <pre class="devsite-click-to-copy">
@@ -80,8 +96,8 @@ Use [Git](https://git-scm.com/){:.external} to clone the
 <code class="devsite-terminal tfo-terminal-windows">cd tensorflow</code>
 </pre>
 
-The repo defaults to the `master` development branch. You can also checkout a
-[release branch](https://github.com/tensorflow/tensorflow/releases){:.external}
+The repo defaults to the `master` development branch. You can also check out a
+[release branch](https://github.com/tensorflow/tensorflow/releases)
 to build:
 
 <pre class="devsite-terminal tfo-terminal-windows prettyprint lang-bsh">
@@ -91,11 +107,38 @@ git checkout <em>branch_name</em>  # r1.9, r1.10, etc.
 Key Point: If you're having build problems on the latest development branch, try
 a release branch that is known to work.
 
+## Optional: Environmental Variable Set Up
+Run the following commands before running the build command to avoid issues with package creation:
+(If the below commands were set up while installing the packages, please ignore them). Run `set` to check if all the paths were set correctly, run `echo %Environmental Variable%` e.g., `echo %BAZEL_VC%` to check the path set up for a specific Environmental Variable
 
-## Configure the build
+ Python path set up issue [tensorflow:issue#59943](https://github.com/tensorflow/tensorflow/issues/59943),[tensorflow:issue#9436](https://github.com/tensorflow/tensorflow/issues/9436),[tensorflow:issue#60083](https://github.com/tensorflow/tensorflow/issues/60083)
 
-Configure your system build by running the following at the root of your
-TensorFlow source tree:
+<pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
+set PATH=path/to/python;%PATH% # [e.g. (C:/Python311)]
+set PATH=path/to/python/Scripts;%PATH% # [e.g. (C:/Python311/Scripts)] 
+set PYTHON_BIN_PATH=path/to/python_virtualenv/Scripts/python.exe 
+set PYTHON_LIB_PATH=path/to/python virtualenv/lib/site-packages 
+set PYTHON_DIRECTORY=path/to/python_virtualenv/Scripts 
+</pre>
+
+Bazel/MSVC/CLANG path set up issue [tensorflow:issue#54578](https://github.com/tensorflow/tensorflow/issues/54578)
+
+<pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
+set BAZEL_SH=C:/msys64/usr/bin/bash.exe 
+set BAZEL_VS=C:/Program Files/Microsoft Visual Studio/2022/BuildTools 
+set BAZEL_VC=C:/Program Files/Microsoft Visual Studio/2022/BuildTools/VC 
+set Bazel_LLVM=C:/Program Files/LLVM (explicitly tell Bazel where LLVM is installed by BAZEL_LLVM, needed while using CLANG)
+set PATH=C:/Program Files/LLVM/bin;%PATH% (Optional, needed while using CLANG as Compiler)
+</pre>
+
+## Optional: Configure the build
+
+TensorFlow builds are configured by the `.bazelrc` file in the repository's
+root directory. The `./configure` or `./configure.py` scripts can be used to
+adjust common settings.
+
+If you need to change the configuration, run the `./configure` script from
+the repository's root directory.
 
 <pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
 python ./configure.py
@@ -110,84 +153,82 @@ differ):
 <h4 class="showalways">View sample configuration session</h4>
 <pre class="devsite-terminal tfo-terminal-windows">
 python ./configure.py
-Starting local Bazel server and connecting to it...
-................
-You have bazel 0.15.0 installed.
-Please specify the location of python. [Default is C:\python36\python.exe]:
+You have bazel 6.5.0 installed.
+Please specify the location of python. [Default is C:\Python311\python.exe]:
 
 Found possible Python library paths:
-  C:\python36\lib\site-packages
-Please input the desired Python library path to use.  Default is [C:\python36\lib\site-packages]
+C:\Python311\lib\site-packages
+Please input the desired Python library path to use.  Default is [C:\Python311\lib\site-packages]
 
-Do you wish to build TensorFlow with CUDA support? [y/N]: <b>Y</b>
-CUDA support will be enabled for TensorFlow.
+Do you wish to build TensorFlow with ROCm support? [y/N]:
+No ROCm support will be enabled for TensorFlow.
 
-Please specify the CUDA SDK version you want to use. [Leave empty to default to CUDA 9.0]:
+WARNING: Cannot build with CUDA support on Windows.
+Starting in TF 2.11, CUDA build is not supported for Windows. To use TensorFlow GPU on Windows, you will need to build/install TensorFlow in WSL2.
 
-Please specify the location where CUDA 9.0 toolkit is installed. Refer to README.md for more details. [Default is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v9.0]:
+Do you want to use Clang to build TensorFlow? [Y/n]:
+Add "--config=win_clang" to compile TensorFlow with CLANG.
 
-Please specify the cuDNN version you want to use. [Leave empty to default to cuDNN 7.0]: <b>7.0</b>
+Please specify the path to clang executable. [Default is C:\Program Files\LLVM\bin\clang.EXE]:
 
-Please specify the location where cuDNN 7 library is installed. Refer to README.md for more details. [Default is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v9.0]: <b>C:\tools\cuda</b>
-
-Please specify a list of comma-separated Cuda compute capabilities you want to build with.
-You can find the compute capability of your device at: https://developer.nvidia.com/cuda-gpus.
-Please note that each additional compute capability significantly increases your build time and binary size. [Default is: 3.5,7.0]: <b>3.7</b>
+You have Clang 17.0.6 installed.
 
 Please specify optimization flags to use during compilation when bazel option "--config=opt" is specified [Default is /arch:AVX]:
 
 Would you like to override eigen strong inline for some C++ compilation to reduce the compilation time? [Y/n]:
 Eigen strong inline overridden.
 
-Configuration finished
+Would you like to interactively configure ./WORKSPACE for Android builds? [y/N]:
+Not configuring the WORKSPACE for Android builds.
+
+Preconfigured Bazel build configs. You can use any of the below by adding "--config=<>" to your build command. See .bazelrc for more details.
+        --config=mkl            # Build with MKL support.
+        --config=mkl_aarch64    # Build with oneDNN and Compute Library for the Arm Architecture (ACL).
+        --config=monolithic     # Config for mostly static monolithic build.
+        --config=numa           # Build with NUMA support.
+        --config=dynamic_kernels        # (Experimental) Build kernels into separate shared objects.
+        --config=v1             # Build with TensorFlow 1 API instead of TF 2 API.
+Preconfigured Bazel build configs to DISABLE default on features:
+        --config=nogcp          # Disable GCP support.
+        --config=nonccl         # Disable NVIDIA NCCL support.
 </pre>
 </section>
 
-### Configuration options
+## Build and install the pip package
 
-For [GPU support](./gpu.md), specify the versions of CUDA and cuDNN. If your
-system has multiple versions of CUDA or cuDNN installed, explicitly set the
-version instead of relying on the default. `./configure.py` creates symbolic
-links to your system's CUDA libraries—so if you update your CUDA library paths,
-this configuration step must be run again before building.
+The pip package is built in two steps. A `bazel build` command creates a
+"package-builder" program. You then run the package-builder to create the
+package.
 
-Note: Starting with TensorFlow 1.6, binaries use AVX instructions which may not
-run on older CPUs.
-
-Warning: TF-TRT Windows support is provided experimentally. No guarantee is made
-regarding functionality or engineering support. Use at your own risk.
-
-## Build the pip package
-
-### TensorFlow 2.x
+### Build the package-builder
 
 tensorflow:master repo has been updated to build 2.x by default.
 [Install Bazel](https://docs.bazel.build/versions/master/install.html) and use
-`bazel build ` to create the TensorFlow package.
+`bazel build ` to create the TensorFlow package-builder.
 
 <pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
-bazel build //tensorflow/tools/pip_package:build_pip_package
-</pre>
-
-
-### TensorFlow 1.x
-
-To build the 1.x version of TensorFlow from master, use
-`bazel build --config=v1` to create a TensorFlow 1.x package.
-
-<pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
-bazel build --config=v1 //tensorflow/tools/pip_package:build_pip_package
+bazel build //tensorflow/tools/pip_package:wheel
 </pre>
 
 #### CPU-only
 
 Use `bazel` to make the TensorFlow package builder with CPU-only support:
 
+##### Build with MSVC 
 <pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
-bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
+bazel build --config=opt --repo_env=TF_PYTHON_VERSION=3.11 //tensorflow/tools/pip_package:wheel --repo_env=WHEEL_NAME=tensorflow_cpu
+</pre>
+
+##### Build with CLANG 
+Use --config=`win_clang` to build TenorFlow with the CLANG Compiler:
+
+<pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
+bazel build --config=win_clang --repo_env=TF_PYTHON_VERSION=3.11 //tensorflow/tools/pip_package:wheel --repo_env=WHEEL_NAME=tensorflow_cpu
 </pre>
 
 #### GPU support
+
+Note: GPU support on native-Windows is only available for 2.10 or earlier versions, starting in TF 2.11, CUDA build is not supported for Windows. For using TensorFlow GPU on Windows, you will need to build/install TensorFlow in WSL2 or use tensorflow-cpu with TensorFlow-DirectML-Plugin
 
 To make the TensorFlow package builder with GPU support:
 
@@ -195,9 +236,16 @@ To make the TensorFlow package builder with GPU support:
 bazel build --config=opt --config=cuda --define=no_tensorflow_py_deps=true //tensorflow/tools/pip_package:build_pip_package
 </pre>
 
+Commands to clean the bazel cache to resolve errors due to invalid or outdated cached data, bazel clean with --expunge flag removes files permanently
+
+<pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
+bazel clean 
+bazel clean --expunge  
+</pre>
+
 #### Bazel build options
 
-Use this option when building to avoid issue with package creation:
+Use this option when building to avoid issues with package creation:
 [tensorflow:issue#22390](https://github.com/tensorflow/tensorflow/issues/22390)
 
 <pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
@@ -216,29 +264,36 @@ to suppress nvcc warning messages.
 
 ### Build the package
 
-The `bazel build` command creates an executable named `build_pip_package`—this
-is the program that builds the `pip` package. For example, the following builds
-a `.whl` package in the `C:/tmp/tensorflow_pkg` directory:
+To build a pip package, you need to specify the --repo_env=WHEEL_NAME flag. 
+Depending on the provided name, the package will be created. For example:
 
-<pre class="devsite-terminal tfo-terminal-windows devsite-click-to-copy">
-bazel-bin\tensorflow\tools\pip_package\build_pip_package C:/tmp/tensorflow_pkg
+To build tensorflow CPU package:
+<pre class="devsite-terminal devsite-click-to-copy">
+bazel build //tensorflow/tools/pip_package:wheel --repo_env=WHEEL_NAME=tensorflow_cpu
 </pre>
 
-Although it is possible to build both CUDA and non-CUDA configs under the
-same source tree, we recommend running `bazel clean` when switching between
-these two configurations in the same source tree.
+To build nightly package, set `tf_nightly` instead of `tensorflow`, e.g.
+to build CPU nightly package:
+<pre class="devsite-terminal devsite-click-to-copy">
+bazel build //tensorflow/tools/pip_package:wheel --repo_env=WHEEL_NAME=tf_nightly_cpu
+</pre>
+
+As a result, generated wheel will be located in
+<pre class="devsite-terminal devsite-click-to-copy">
+bazel-bin/tensorflow/tools/pip_package/wheel_house/
+</pre>
+
 
 ### Install the package
 
 The filename of the generated `.whl` file depends on the TensorFlow version and
-your platform. Use `pip3 install` to install the package, for example:
+your platform. Use `pip install` to install the package, for example:
 
-<pre class="devsite-terminal tfo-terminal-windows prettyprint lang-bsh">
-pip3 install C:/tmp/tensorflow_pkg/tensorflow-<var>version</var>-cp36-cp36m-win_amd64.whl
+<pre class="devsite-terminal prettyprint lang-bsh">
+pip install bazel-bin/tensorflow/tools/pip_package/wheel_house/tensorflow-<var>version</var>-<var>tags</var>.whl
 </pre>
 
 Success: TensorFlow is now installed.
-
 
 ## Build using the MSYS shell
 
@@ -261,12 +316,12 @@ considered a Unix absolute path since it starts with a slash.)
 
 Add the Bazel and Python installation directories to your `$PATH` environmental
 variable. If Bazel is installed to `C:\tools\bazel.exe`, and Python to
-`C:\Python36\python.exe`, set your `PATH` with:
+`C:\Python\python.exe`, set your `PATH` with:
 
 <pre class="prettyprint lang-bsh">
 # Use Unix-style with ':' as separator
 <code class="devsite-terminal">export PATH="/c/tools:$PATH"</code>
-<code class="devsite-terminal">export PATH="/c/Python36:$PATH"</code>
+<code class="devsite-terminal">export PATH="/c/path/to/Python:$PATH"</code>
 </pre>
 
 For GPU support, add the CUDA and cuDNN bin directories to your `$PATH`:
@@ -277,6 +332,8 @@ For GPU support, add the CUDA and cuDNN bin directories to your `$PATH`:
 <code class="devsite-terminal">export PATH="/c/tools/cuda/bin:$PATH"</code>
 </pre>
 
+Note: Starting in TF 2.11, CUDA build is not supported for Windows. For using TensorFlow GPU on Windows, you will need to build/install TensorFlow in WSL2 or use tensorflow-cpu with TensorFlow-DirectML-Plugin
+
 <a name="tested_build_configurations"></a>
 ## Tested build configurations
 
@@ -284,6 +341,15 @@ For GPU support, add the CUDA and cuDNN bin directories to your `$PATH`:
 
 <table>
 <tr><th>Version</th><th>Python version</th><th>Compiler</th><th>Build tools</th></tr>
+<tr><td>tensorflow-2.18.0</td><td>3.9-3.12</td><td>CLANG 17.0.6</td><td>Bazel 6.5.0</td></tr>
+<tr><td>tensorflow-2.17.0</td><td>3.9-3.12</td><td>CLANG 17.0.6</td><td>Bazel 6.5.0</td></tr>
+<tr><td>tensorflow-2.16.1</td><td>3.9-3.12</td><td>CLANG 17.0.6</td><td>Bazel 6.5.0</td></tr>
+<tr><td>tensorflow-2.15.0</td><td>3.9-3.11</td><td>MSVC 2019</td><td>Bazel 6.1.0</td></tr>
+<tr><td>tensorflow-2.14.0</td><td>3.9-3.11</td><td>MSVC 2019</td><td>Bazel 6.1.0</td></tr>
+<tr><td>tensorflow-2.12.0</td><td>3.8-3.11</td><td>MSVC 2019</td><td>Bazel 5.3.0</td></tr>
+<tr><td>tensorflow-2.11.0</td><td>3.7-3.10</td><td>MSVC 2019</td><td>Bazel 5.3.0</td></tr>
+<tr><td>tensorflow-2.10.0</td><td>3.7-3.10</td><td>MSVC 2019</td><td>Bazel 5.1.1</td></tr>
+<tr><td>tensorflow-2.9.0</td><td>3.7-3.10</td><td>MSVC 2019</td><td>Bazel 5.0.0</td></tr>
 <tr><td>tensorflow-2.8.0</td><td>3.7-3.10</td><td>MSVC 2019</td><td>Bazel 4.2.1</td></tr>
 <tr><td>tensorflow-2.7.0</td><td>3.7-3.9</td><td>MSVC 2019</td><td>Bazel 3.7.2</td></tr>
 <tr><td>tensorflow-2.6.0</td><td>3.6-3.9</td><td>MSVC 2019</td><td>Bazel 3.7.2</td></tr>
@@ -312,9 +378,12 @@ For GPU support, add the CUDA and cuDNN bin directories to your `$PATH`:
 </table>
 
 ### GPU
+Note: GPU support on native-Windows is only available for 2.10 or earlier versions, starting in TF 2.11, CUDA build is not supported for Windows. For using TensorFlow GPU on Windows, you will need to build/install TensorFlow in WSL2 or use tensorflow-cpu with TensorFlow-DirectML-Plugin
 
 <table>
 <tr><th>Version</th><th>Python version</th><th>Compiler</th><th>Build tools</th><th>cuDNN</th><th>CUDA</th></tr>
+<tr><td>tensorflow_gpu-2.10.0</td><td>3.7-3.10</td><td>MSVC 2019</td><td>Bazel 5.1.1</td><td>8.1</td><td>11.2</td></tr>
+<tr><td>tensorflow_gpu-2.9.0</td><td>3.7-3.10</td><td>MSVC 2019</td><td>Bazel 5.0.0</td><td>8.1</td><td>11.2</td></tr>
 <tr><td>tensorflow_gpu-2.8.0</td><td>3.7-3.10</td><td>MSVC 2019</td><td>Bazel 4.2.1</td><td>8.1</td><td>11.2</td></tr>
 <tr><td>tensorflow_gpu-2.7.0</td><td>3.7-3.9</td><td>MSVC 2019</td><td>Bazel 3.7.2</td><td>8.1</td><td>11.2</td></tr>
 <tr><td>tensorflow_gpu-2.6.0</td><td>3.6-3.9</td><td>MSVC 2019</td><td>Bazel 3.7.2</td><td>8.1</td><td>11.2</td></tr>
