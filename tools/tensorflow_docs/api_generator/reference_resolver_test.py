@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +28,6 @@ from tensorflow_docs.api_generator import parser
 from tensorflow_docs.api_generator import reference_resolver as reference_resolver_lib
 
 
-
 class TestReferenceResolver(absltest.TestCase):
   _BASE_DIR = tempfile.mkdtemp()
 
@@ -48,11 +46,12 @@ class TestReferenceResolver(absltest.TestCase):
         'tf.AClass2': False,
         'tf.function': False
     }
-    py_module_names = ['tf', 'tfdbg']
+    py_module_names = {'tf': 'tensorflow'}
 
-    resolver = reference_resolver_lib.ReferenceResolver(duplicate_of,
-                                                        is_fragment,
-                                                        py_module_names)
+    resolver = reference_resolver_lib.ReferenceResolver(
+        duplicate_of=duplicate_of,
+        is_fragment=is_fragment,
+        py_module_names=py_module_names)
 
     outdir = self.workdir
 
@@ -79,10 +78,13 @@ class TestReferenceResolver(absltest.TestCase):
         'tf.Class2': False,
         'tf.sub.Class2': False
     }
-    py_module_names = ['tf']
+    py_module_names = {'tf': 'tensorflow'}
 
     reference_resolver = reference_resolver_lib.ReferenceResolver(
-        duplicate_of, is_fragment, py_module_names, link_prefix='')
+        duplicate_of=duplicate_of,
+        is_fragment=is_fragment,
+        py_module_names=py_module_names,
+        link_prefix='')
 
     # Method references point to the method, in the canonical class alias.
     result = reference_resolver.reference_to_url('tf.Class1.method')
@@ -110,6 +112,7 @@ class TestPartialSymbolAutoRef(parameterized.TestCase):
       ('parens', 'Model.fit(x, y, epochs=5)', '../tf/keras/Model.md#fit'),
       ('duplicate_name', 'tf.matmul', '../tf/linalg/matmul.md'),
       ('full_name', 'tf.concat', '../tf/concat.md'),
+      ('extra_backticks', '`tf.concat`', '../tf/concat.md'),
       ('normal_and_compat', 'linalg.matmul', '../tf/linalg/matmul.md'),
       ('compat_only', 'math.deprecated', None),
       ('contrib_only', 'y.z', None),
@@ -130,17 +133,20 @@ class TestPartialSymbolAutoRef(parameterized.TestCase):
         'tf.contrib.y.z': False,
     }
 
-    py_module_names = ['tf']
+    py_module_names = {'tf': 'tensorflow'}
 
     resolver = reference_resolver_lib.ReferenceResolver(
-        duplicate_of, is_fragment, py_module_names, link_prefix='..')
+        duplicate_of=duplicate_of,
+        is_fragment=is_fragment,
+        py_module_names=py_module_names,
+        link_prefix='..')
     input_string = string.join('``')
     ref_string = resolver.replace_references(input_string)
 
     if link is None:
       expected = input_string
     else:
-      expected = self.REF_TEMPLATE.format(link=link, text=string)
+      expected = self.REF_TEMPLATE.format(link=link, text=string.strip('`'))
 
     self.assertEqual(expected, ref_string)
 

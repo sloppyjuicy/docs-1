@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +20,7 @@ from tensorflow_docs.api_generator.pretty_docs import class_page
 from tensorflow_docs.api_generator.pretty_docs import function_page
 from tensorflow_docs.api_generator.report import linter
 
-from tensorflow_docs.api_generator.report.schema import api_report_generated_pb2 as api_report_pb2
+from tensorflow_docs.api_generator.report.schema import api_report_pb2
 from google.protobuf import timestamp_pb2
 
 
@@ -35,6 +34,15 @@ class ApiReport:
     invocation_timestamp.GetCurrentTime()
     self.api_report.timestamp.CopyFrom(invocation_timestamp)
     self.api_report.date = invocation_timestamp.ToJsonString()
+
+  def write(self, path):
+    api_report = api_report_pb2.ApiReport(
+        timestamp=self.api_report.timestamp,
+        date=self.api_report.date,
+        symbol_metric=sorted(
+            self.api_report.symbol_metric, key=lambda sm: sm.symbol_name))
+
+    path.write_bytes(api_report.SerializeToString())
 
   def _lint(
       self,
@@ -69,9 +77,7 @@ class ApiReport:
     """Convert a class description into a description of the constructor."""
     methods = class_page.split_methods(class_page_info.methods)
 
-    constructor_info = base_page.PageInfo(
-        full_name=class_page_info.full_name,
-        py_object=class_page_info.py_object)
+    constructor_info = base_page.PageInfo(api_node=class_page_info.api_node)
 
     # Replace the class py_object with constructors py_object. This is done
     # because each method is linted separately and class py_object contains the
