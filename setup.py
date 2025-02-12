@@ -14,6 +14,7 @@
 # ==============================================================================
 """tensorflow_docs is a package for generating python api-reference docs."""
 
+import datetime
 import subprocess
 import sys
 
@@ -21,7 +22,22 @@ from setuptools import find_packages
 from setuptools import setup
 
 project_name = 'tensorflow-docs'
-version = '0.0.0.dev0'
+
+
+def get_version() -> str:
+  ts = int(
+      subprocess.check_output(['git', 'log', '-1', '--format=%ct', 'tools'])
+      .decode('utf-8')
+      .strip()
+  )
+  dt = datetime.datetime.utcfromtimestamp(ts)
+  sec = 60 * 60 * dt.hour + 60 * dt.minute + dt.second
+
+  # calver.org
+  return f'{dt.year}.{dt.month}.{dt.day}.{sec}'
+
+
+version = get_version()
 
 DOCLINES = __doc__.split('\n')
 
@@ -29,15 +45,12 @@ REQUIRED_PKGS = [
     'astor',
     'absl-py',
     'jinja2',
-    'protobuf>=3.14',
+    'nbformat',
+    'protobuf>=3.12',
     'pyyaml',
 ]
 
-# Dataclasses is in-built from py >=3.7. This version is a backport for py 3.6.
-if (sys.version_info.major, sys.version_info.minor) == (3, 6):
-  REQUIRED_PKGS.append('dataclasses')
-
-VIS_REQURE = [
+VIS_REQUIRE = [
     'numpy',
     'PILLOW',
     'webp',
@@ -46,6 +59,7 @@ VIS_REQURE = [
 # https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
 setup(
     name=project_name,
+    python_requires='>=3.9',
     version=version,
     description=DOCLINES[0],
     long_description='\n'.join(DOCLINES[2:]),
@@ -58,7 +72,7 @@ setup(
     package_dir={'': 'tools'},
     scripts=[],
     install_requires=REQUIRED_PKGS,
-    extras_require={'vis': VIS_REQURE},
+    extras_require={'vis': VIS_REQUIRE},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +17,21 @@
 class ParserConfig(object):
   """Stores all indexes required to parse the docs."""
 
-  def __init__(self, reference_resolver, duplicates, duplicate_of, tree, index,
-               reverse_index, base_dir, code_url_prefix):
+  def __init__(
+      self,
+      *,
+      reference_resolver,
+      duplicates,
+      duplicate_of,
+      tree,
+      index,
+      reverse_index,
+      path_tree,
+      api_tree,
+      base_dir,
+      code_url_prefix,
+      self_link_base
+  ):
     """Object with the common config for docs_for_object() calls.
 
     Args:
@@ -33,9 +45,13 @@ class ParserConfig(object):
         members. Used to populate the members section of a class or module page.
       index: A `dict` mapping full names to objects.
       reverse_index: A `dict` mapping object ids to full names.
+      path_tree: A PathTree datastructure to manage all the API paths.
+      api_tree: A PathTree datastructure to manage all the API objects.
       base_dir: A base path that is stripped from file locations written to the
         docs.
       code_url_prefix: A Url to pre-pend to the links to file locations.
+      self_link_base: A Url to pre-pend to self-links to the generated docs
+        pages.
     """
     self.reference_resolver = reference_resolver
     self.duplicates = duplicates
@@ -43,11 +59,12 @@ class ParserConfig(object):
     self.tree = tree
     self.reverse_index = reverse_index
     self.index = index
+    self.path_tree = path_tree
+    self.api_tree = api_tree
     self.base_dir = base_dir
     self.code_url_prefix = code_url_prefix
+    self.self_link_base = self_link_base
 
   def py_name_to_object(self, full_name):
     """Return the Python object for a Python symbol name."""
     return self.index[full_name]
-
-

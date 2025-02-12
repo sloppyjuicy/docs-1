@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Base classes for page construction."""
 import abc
+import os
 import pathlib
+import posixpath
 import textwrap
-from typing import Any, Callable, ClassVar, Dict, List, NamedTuple, Optional, Sequence, Tuple, Type
+from typing import Any, ClassVar, Dict, List, NamedTuple, Optional, Sequence, Tuple, Type
 
 from tensorflow_docs.api_generator import config
 from tensorflow_docs.api_generator import doc_controls
@@ -55,7 +57,7 @@ class TemplatePageBuilder(PageBuilder):
     return top_source_link(self.page_info.defined_in)
 
   def build_collapsable_aliases(self):
-    return build_collapsable_aliases(self.page_info.aliases)
+    return build_collapsable_aliases(sorted(self.page_info.aliases))
 
   def top_compat(self):
     return build_top_compat(self.page_info, h_level=2)
@@ -99,15 +101,19 @@ class PageInfo:
     aliases: A list of full-name for all aliases for this object.
     doc: A list of objects representing the docstring. These can all be
       converted to markdown using str().
+    search_hints: If true include metadata search hints, else include a
+      "robots: noindex"
+    text: The resulting page text.
+    page_text: The cached result.
   """
   DEFAULT_BUILDER_CLASS: ClassVar[Type[PageBuilder]] = TemplatePageBuilder
 
   def __init__(
       self,
-      full_name: str,
-      py_object: Any,
+      api_node,
       extra_docs: Optional[Dict[int, str]] = None,
       search_hints: bool = True,
+      parser_config=None,
   ):
     """Initialize a PageInfo.
 
@@ -116,25 +122,67 @@ class PageInfo:
       py_object: The object being documented.
       extra_docs: Extra docs for symbols like public constants(list, tuple, etc)
         that need to be added to the markdown pages created.
+      search_hints: If true include metadata search hints, else include a
+        "robots: noindex"
+
     """
-    self.full_name = full_name
-    self.py_object = py_object
+    self.api_node = api_node
+    self.full_name = api_node.full_name
+    self.py_object = api_node.py_object
     self._extra_docs = extra_docs
     self.search_hints = search_hints
+    self.parser_config = parser_config
 
     self._defined_in = None
     self._aliases = None
     self._doc = None
+    self._page_text = None
 
-  def collect_docs(self, parser_config: config.ParserConfig):
+  def collect_docs(self):
     """Collects additional information from the `config.ParserConfig`."""
     pass
 
+  def docs_for_object(self):
+    relative_path = os.path.relpath(
+        path='.',
+        start=os.path.dirname(parser.documentation_path(self.full_name)) or '.')
+
+    # Convert from OS-specific path to URL/POSIX path.
+    relative_path = posixpath.join(*relative_path.split(os.path.sep))
+
+    with self.parser_config.reference_resolver.temp_prefix(relative_path):
+      self.set_doc(
+          parser.parse_md_docstring(
+              self.py_object,
+              self.full_name,
+              self.parser_config,
+              self._extra_docs,
+          ))
+
+      self.collect_docs()
+
+      aliases = ['.'.join(alias) for alias in self.api_node.aliases]
+      if self.full_name in aliases:
+        aliases.remove(self.full_name)
+      self.set_aliases(aliases)
+
+      self.set_defined_in(
+          parser.get_defined_in(self.py_object, self.parser_config))
+
+      self._page_text = self.build()
+
+    return self._page_text
+
   def build(self) -> str:
     """Builds the documentation."""
-
     cls = self.DEFAULT_BUILDER_CLASS
     return cls(self).build()
+
+  @property
+  def page_text(self):
+    if self._page_text is None:
+      self._page_text = self.build()
+    return self._page_text
 
   def __eq__(self, other):
     if isinstance(other, PageInfo):
@@ -156,6 +204,14 @@ class PageInfo:
     """Sets the `defined_in` path."""
     assert self.defined_in is None
     self._defined_in = defined_in
+
+  @property
+  def self_link(self):
+    if not self.parser_config.self_link_base:
+      return None
+    rel_path = parser.documentation_path(self.full_name)
+    rel_path = rel_path[: -1 * len('.md')]  # strip suffix
+    return f'{self.parser_config.self_link_base}/{rel_path}'
 
   @property
   def aliases(self):
@@ -195,13 +251,14 @@ class MemberInfo(NamedTuple):
   url: str
 
 
-_TABLE_ITEMS = ('arg', 'return', 'raise', 'attr', 'yield')
+_ALWAYS_TABLE_ITEMS = ('arg', 'return', 'raise', 'attr', 'yield')
 
 
 def format_docstring(item,
                      *,
-                     table_title_template: Optional[str] = None) -> str:
-  """Formats TitleBlock into a table or list or a normal string.
+                     table_title_template: Optional[str] = None,
+                     anchors: bool = True) -> str:
+  """Formats a docstring part into a string.
 
   Args:
     item: A TitleBlock instance or a normal string.
@@ -213,8 +270,11 @@ def format_docstring(item,
   """
 
   if isinstance(item, parser.TitleBlock):
-    if item.title.lower().startswith(_TABLE_ITEMS):
-      return item.table_view(title_template=table_title_template)
+    if (item.items or  # A colon-list like under args
+        item.text.strip() or  # An indented block
+        item.title.lower().startswith(_ALWAYS_TABLE_ITEMS)):
+      return item.table_view(
+          title_template=table_title_template, anchors=anchors)
     else:
       return str(item)
   else:
@@ -268,7 +328,7 @@ DECORATOR_ALLOWLIST = frozenset({
 
 
 def build_signature(name: str,
-                    signature: signature_lib.SignatureComponents,
+                    signature: signature_lib.TfSignature,
                     decorators: Optional[Sequence[str]],
                     type_alias: bool = False) -> str:
   """Returns a markdown code block containing the function signature.
@@ -440,14 +500,13 @@ def top_source_link(location):
   return table
 
 
-def small_source_link(location):
+def small_source_link(location, text='View source'):
   """Returns a small source link."""
-  template = '<a target="_blank" href="{url}">View source</a>\n\n'
-
-  if not location.url:
+  if location.url:
+    return ('<a target="_blank" class="external" '
+            f'href="{location.url}">{text}</a>\n\n')
+  else:
     return ''
-
-  return template.format(url=location.url)
 
 
 def build_collapsable_aliases(aliases: List[str]) -> str:

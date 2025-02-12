@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +14,7 @@
 # ==============================================================================
 r"""Lint assertions for notebooks published on tensorflow.org.
 
-These lints are a non-exhaustive implemention of style rules found in the
+These lints are a non-exhaustive implementation of style rules found in the
 TensorFlow documentation and style guides. See:
 
 - https://www.tensorflow.org/community/contribute/docs
@@ -47,7 +46,8 @@ from tensorflow_docs.tools.nblint.decorator import Options
 # Acceptable copyright heading for notebooks following this style.
 copyrights_re = [
     r"Copyright 20[1-9][0-9] The TensorFlow\s.*?\s?Authors",
-    r"Copyright 20[1-9][0-9] Google"
+    r"Copyright 20[1-9][0-9] Google",
+    r"Copyright 20[1-9][0-9] The AI Edge Authors",
 ]
 
 
@@ -57,7 +57,7 @@ def copyright_check(args):
   return any(re.search(pattern, cell_source) for pattern in copyrights_re)
 
 
-license_re = re.compile("#@title Licensed under the Apache License")
+license_re = re.compile("#\s?@title Licensed under the Apache License")
 
 
 @lint(
@@ -82,7 +82,11 @@ def not_translation(args):
 
 # Button checks
 
-is_button_cell_re = re.compile(r"class.*tfo-notebook-buttons")
+# Look for class="tfo-notebook-buttons" (CSS used on website versions) or the
+# run-in-colab logo (for notebooks that stick to GitHub/Colab).
+is_button_cell_re = re.compile(
+    r"class.*tfo-notebook-buttons|colab_logo_32px\.png"
+)
 
 
 def get_arg_or_fail(user_args, arg_name, arg_fmt):
@@ -160,13 +164,14 @@ def button_colab(args):
   """Test that the URL in the Colab button matches the file path."""
   cell_source = args["cell_source"]
   repo = get_arg_or_fail(args["user"], "repo", "<org/name>")
+  branch = args["user"].get("branch", "master")
   docs_dir, rel_path = split_doc_path(args["path"])
 
   # Buttons use OSS URLs.
   if str(docs_dir) == "g3doc/en":
     docs_dir = pathlib.Path("site/en")
 
-  base_url = f"colab.research.google.com/github/{repo}/blob/master"
+  base_url = f"colab.research.google.com/github/{repo}/blob/{branch}"
   this_url = "https://" + str(base_url / docs_dir / rel_path)
 
   if is_button_cell_re.search(cell_source) and cell_source.find(this_url) != -1:
@@ -217,13 +222,14 @@ def button_github(args):
   """Test that the URL in the GitHub button matches the file path."""
   cell_source = args["cell_source"]
   repo = get_arg_or_fail(args["user"], "repo", "<org/name>")
+  branch = args["user"].get("branch", "master")
   docs_dir, rel_path = split_doc_path(args["path"])
 
   # Buttons use OSS URLs.
   if str(docs_dir) == "g3doc/en":
     docs_dir = pathlib.Path("site/en")
 
-  base_url = f"github.com/{repo}/blob/master"
+  base_url = f"github.com/{repo}/blob/{branch}"
   this_url = "https://" + str(base_url / docs_dir / rel_path)
 
   if is_button_cell_re.search(cell_source) and cell_source.find(this_url) != -1:
@@ -258,7 +264,10 @@ def button_website(args):
   if "r1" in rel_path.parts:
     return True  # No website button for TF 1.x docs.
 
-  if str(docs_dir) == "site/zh-cn" or str(docs_dir) == "site/zh-tw":
+  user_url = args["user"].get("base_url")
+  if user_url:
+    base_url = user_url
+  elif str(docs_dir) == "site/zh-cn" or str(docs_dir) == "site/zh-tw":
     base_url = "https://tensorflow.google.cn/"
   else:
     base_url = "https://www.tensorflow.org/"

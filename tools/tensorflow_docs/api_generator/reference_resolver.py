@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,8 @@
 # ==============================================================================
 """Turn Python docstrings into Markdown for TensorFlow documentation."""
 
+from __future__ import annotations
+
 import collections
 import contextlib
 import html
@@ -23,10 +24,10 @@ import os
 import posixpath
 import re
 
-from typing import Dict, List, Optional
+from typing import Optional, Union
 
 from tensorflow_docs.api_generator import parser
-from tensorflow_docs.api_generator import obj_type as obj_type_lib
+
 
 class TFDocsError(Exception):
   pass
@@ -75,15 +76,20 @@ class ReferenceResolver:
   AUTO_REFERENCE_RE = re.compile(
       r"""
       (?P<brackets>\[.*?\])|                      # match a '[]' span
-      `(?P<backticks>@?[\w\(\[\)\]\{\}.,=\s]+?)`  # or a `` span
+      ``?(?P<backticks>@?[\w\(\[\)\]\{\}.,=\s]+?)``?  # or a `` span
       """,
-      flags=re.VERBOSE)
+      flags=re.VERBOSE,
+  )
 
-  def __init__(self,
-               duplicate_of: Dict[str, str],
-               is_fragment: Dict[str, bool],
-               py_module_names: List[str],
-               link_prefix: Optional[str] = None):
+  def __init__(
+      self,
+      *,
+      duplicate_of: dict[str, str],
+      is_fragment: dict[str, bool],
+      py_module_names: Union[list[str], dict[str, str]],
+      link_prefix: Optional[str] = None,
+      physical_path: Optional[dict[str, str]] = None,
+  ):
     """Initializes a Reference Resolver.
 
     Args:
@@ -92,14 +98,22 @@ class ReferenceResolver:
       is_fragment: A map from full names to bool for each symbol. If True the
         object lives at a page fragment `tf.a.b.c` --> `tf/a/b#c`. If False
         object has a page to itself: `tf.a.b.c` --> `tf/a/b/c`.
-      py_module_names: A list of string names of Python modules.
+      py_module_names: A dict from short name to module name Like
+        `{'tf': 'tensorflow'}`. Or [deprecated] a list of short-names like
+        `['tf']`.
       link_prefix: The website to which these symbols should link to. A prefix
         is added before the links to enable cross-site linking if `link_prefix`
         is not None.
+      physical_path: A mapping from the preferred full_name to the object's
+        physical path.
     """
     self._duplicate_of = duplicate_of
     self._is_fragment = is_fragment
+    self._physical_path = physical_path
+    if isinstance(py_module_names, list):
+      py_module_names = {short: short for short in py_module_names}
     self._py_module_names = py_module_names
+
     self._link_prefix = link_prefix
 
     self._all_names = set(is_fragment.keys())
@@ -124,22 +138,25 @@ class ReferenceResolver:
     Returns:
       an instance of `ReferenceResolver` ()
     """
-    is_fragment = {}
-    for full_name, obj in visitor.index.items():
-      obj_type = obj_type_lib.ObjType.get(obj)
-      if obj_type in (obj_type_lib.ObjType.CLASS, obj_type_lib.ObjType.MODULE):
-        is_fragment[full_name] = False
-      elif obj_type in (obj_type_lib.ObjType.CALLABLE,
-                        obj_type_lib.ObjType.TYPE_ALIAS):
-        if parser.is_class_attr(full_name, visitor.index):
-          is_fragment[full_name] = True
-        else:
-          is_fragment[full_name] = False
-      else:
-        is_fragment[full_name] = True
+    api_tree = visitor.api_tree
+    all_is_fragment = {}
+    duplicate_of = {}
+    physical_path = {}
+    for node in api_tree.iter_nodes():
+      full_name = node.full_name
+      is_fragment = node.output_type() is node.OutputType.FRAGMENT
+      if node.physical_path:
+        physical_path[node.full_name] = '.'.join(node.physical_path)
+      for alias in node.aliases:
+        alias_name = '.'.join(alias)
+        duplicate_of[alias_name] = full_name
+        all_is_fragment[alias_name] = is_fragment
 
     return cls(
-        duplicate_of=visitor.duplicate_of, is_fragment=is_fragment, **kwargs)
+        duplicate_of=visitor.duplicate_of,
+        is_fragment=all_is_fragment,
+        physical_path=physical_path,
+        **kwargs)
 
   def with_prefix(self, prefix):
     return type(self)(
@@ -229,7 +246,7 @@ class ReferenceResolver:
     return new_partial_dict
 
   def to_json_file(self, filepath):
-    """Converts the RefenceResolver to json and writes it to the specified file.
+    """Converts the ReferenceResolver to json and writes it to the specified file.
 
     Args:
       filepath: The file path to write the json to.
@@ -281,7 +298,9 @@ class ReferenceResolver:
                           '</pre>'),
         IgnoreLineInBlock('```', '```'),
         IgnoreLineInBlock(
-            '<pre class="devsite-click-to-copy prettyprint lang-py">', '</pre>')
+            '<pre class="devsite-click-to-copy prettyprint lang-py">',
+            '</pre>'),
+        IgnoreLineInBlock('![', ')'),  # Don't replace within image's caption
     ]
 
     for line in string.splitlines():
@@ -291,7 +310,7 @@ class ReferenceResolver:
 
     return '\n'.join(fixed_lines)
 
-  def python_link(self, link_text, ref_full_name):
+  def python_link(self, link_text: str, ref_full_name: Optional[str] = None):
     """Resolve a "`tf.symbol`" reference to a link.
 
     This will pick the canonical location for duplicate symbols.
@@ -303,6 +322,8 @@ class ReferenceResolver:
     Returns:
       A link to the documentation page of `ref_full_name`.
     """
+    if ref_full_name is None:
+      ref_full_name = link_text
     link_text = html.escape(link_text, quote=True)
 
     url = self.reference_to_url(ref_full_name)
@@ -381,6 +402,9 @@ class ReferenceResolver:
     elif full_name is None or ('tf.compat.v' not in full_name and
                                'tf.contrib' not in full_name):
       string = self._partial_symbols_dict.get(string, string)
+
+    if not string:
+      return match.group(0)
 
     try:
       if string.startswith('tensorflow::'):

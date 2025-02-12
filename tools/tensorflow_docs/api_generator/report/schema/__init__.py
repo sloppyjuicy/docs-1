@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,4 +14,18 @@
 # ==============================================================================
 """Public API for api report proto."""
 
-from tensorflow_docs.api_generator.report.schema import api_report_generated_pb2 as api_report_pb2
+import sys
+
+from google import protobuf
+
+_version_parts = protobuf.__version__.split('.')
+_version = (int(_version_parts[0]), int(_version_parts[1]))
+
+if _version >= (3, 20):
+  from tensorflow_docs.api_generator.report.schema import api_report_generated_pb2 as api_report_pb2  # pylint: disable=g-import-not-at-top
+else:
+  from tensorflow_docs.api_generator.report.schema import api_report_generated_319_pb2 as api_report_pb2  # pylint: disable=g-import-not-at-top
+
+sys.modules['tensorflow_docs.api_generator.report.schema.api_report_pb2'] = (
+    api_report_pb2
+)

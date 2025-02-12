@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Any
+import textwrap
+from typing import Any, Optional
 
+from tensorflow_docs.api_generator import doc_controls
 from tensorflow_docs.api_generator import parser
 from tensorflow_docs.api_generator import signature as signature_lib
 from tensorflow_docs.api_generator.pretty_docs import base_page
@@ -51,15 +52,14 @@ class FunctionPageInfo(base_page.PageInfo):
   """
   DEFAULT_BUILDER_CLASS = FunctionPageBuilder
 
-  def __init__(self, *, full_name: str, py_object: Any, **kwargs):
+  def __init__(self, *, api_node, **kwargs):
     """Initialize a FunctionPageInfo.
 
     Args:
-      full_name: The full, main name, of the object being documented.
-      py_object: The object being documented.
+      api_node: the api tree node.
       **kwargs: Extra arguments.
     """
-    super().__init__(full_name, py_object, **kwargs)
+    super().__init__(api_node, **kwargs)
 
     self._signature = None
     self._decorators = []
@@ -68,20 +68,15 @@ class FunctionPageInfo(base_page.PageInfo):
   def signature(self):
     return self._signature
 
-  def collect_docs(self, parser_config):
+  def collect_docs(self):
     """Collect all information necessary to genertate the function page.
 
     Mainly this is details about the function signature.
-
-    Args:
-      parser_config: The config.ParserConfig for the module being documented.
     """
-
     assert self.signature is None
     self._signature = signature_lib.generate_signature(
         self.py_object,
-        parser_config,
-        self.full_name,
+        self.parser_config,
         func_type=signature_lib.FuncType.FUNCTION,
     )
     self._decorators = signature_lib.extract_decorators(self.py_object)
@@ -92,6 +87,13 @@ class FunctionPageInfo(base_page.PageInfo):
 
   def add_decorator(self, dec):
     self._decorators.append(dec)
+
+  @property
+  def header(self) -> Optional[str]:
+    header = doc_controls.get_header(self.py_object)
+    if header is not None:
+      header = textwrap.dedent(header)
+    return header
 
   def get_metadata_html(self):
     return parser.Metadata(self.full_name).build_html()
